@@ -14,10 +14,10 @@ Private m_value As Variant
 Private m_error As String
 Private m_isSuccess As Boolean
 
-' Только Public методы и свойства
+' Only public methods and properties
 
 Public Property Get value() As Variant
-    If Not m_isSuccess Then Err.Raise 513, , "Ошибка: попытка чтения Value при ошибке"
+    If Not m_isSuccess Then Err.Raise 513, , "Error: attempt to read Value when in error state"
     value = m_value
 End Property
 
@@ -29,8 +29,8 @@ Public Property Get IsSuccess() As Boolean
     IsSuccess = m_isSuccess
 End Property
 
-' Внутренняя инициализация — но НЕ вызывается извне!
-' Мы сделаем её Public, но договоримся её не использовать напрямую
+' Internal initialization вЂ” not intended for direct external use.
+' Made Public only for factory functions; do not call directly.
 Public Sub InitOk(ByVal value As Variant)
     m_value = value
     m_error = ""
@@ -43,7 +43,7 @@ Public Sub InitErr(ByVal errorMsg As String)
     m_isSuccess = False
 End Sub
 
-' Bind остаётся тот же
+' Bind chains operations; skips execution if already in error state.
 Public Function Bind(ByVal fnName As String) As clsResult
     If Not m_isSuccess Then
         Set Bind = Me
@@ -55,16 +55,18 @@ Public Function Bind(ByVal fnName As String) As clsResult
     Set nextResult = Application.Run(fnName, m_value)
 
     If TypeName(nextResult) <> "clsResult" Then
-        Set Bind = ResultErr("Bind: функция '" & fnName & "' не вернула clsResult")
+        Set Bind = ResultErr("Bind: function '" & fnName & "' did not return clsResult")
         Exit Function
     End If
 
     Set Bind = nextResult
     Exit Function
+
 Crash:
-    Set Bind = ResultErr("Bind: ошибка в '" & fnName & "' — " & Err.Description)
+    Set Bind = ResultErr("Bind: error in '" & fnName & "' вЂ” " & Err.Description)
 End Function
 
+' Returns the value if success, otherwise returns the provided default.
 Public Function GetOrElse(ByVal defaultValue As Variant) As Variant
     If m_isSuccess Then
         GetOrElse = m_value
